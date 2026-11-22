@@ -23,7 +23,7 @@ bytes_per_token = 2 (K and V) x n_layers x n_kv_heads x head_dim x dtype_bytes
 
 | Model | layers | KV heads | head_dim | bytes/token (bf16) | 128k-token context |
 |---|---:|---:|---:|---:|---:|
-| Qwen3-0.6B | 28 | 8 | 128 | 2*28*8*128*2 = **114,688 B = 112 KiB** | 14.0 GiB |
+| Qwen3-0.6B | 28 | 8 | 128 | 2*28*8*128*2 = **114,688 B = 112 KiB** | 14.0 GiB (arithmetic only: native context is 32k) |
 | Llama-3-70B (GQA) | 80 | 8 | 128 | 2*80*8*128*2 = **327,680 B = 320 KiB** | **40.0 GiB** |
 | a 70B *without* GQA (64 KV heads) | 80 | 64 | 128 | 2,621,440 B = 2.5 MiB | 320 GiB |
 
@@ -43,7 +43,8 @@ How long does it take to bring that 40 GiB back once it has left the GPU?
 | **this laptop, SSD direct I/O read** | **1.98 GB/s** | **21.7 s** | measured, QD=1, 1.75 MiB requests |
 
 Compare that to *recomputing* it: a 128k prefill of a 70B model is ~2 x 70e9 x 131k = 1.8e16 FLOP,
-plus the quadratic attention term, i.e. tens of seconds on one H100. Moving bytes beats recomputing as soon
+plus a quadratic attention term of the same order, i.e. tens of seconds of H100 compute even at
+high utilisation (~1 PFLOP/s dense bf16 peak). Moving bytes beats recomputing as soon
 as the link is a few GB/s, which is the whole economic argument for KV tiers (CachedAttention, Mooncake,
 LMCache), but only if the copy hides behind compute rather than stalling the decode loop.
 
@@ -129,10 +130,13 @@ other jobs during measurement (a lock limits it to two GPU jobs at a time), so e
 | direct I/O read | 1.98 (0.93 ms per block) |
 
 Lessons:
-* **Transfer granularity dominates.** 64 KiB copies reach < 1 GB/s (fixed ~70 us launch/DMA setup cost);
-  a 1.75 MiB all-layers block already gets 98% of peak. A per-layer layout (28 x 2 copies of 32 KiB each)
-  would be ~15x slower, the same effect the vLLM team measured on H100.
-* **Pinned memory is 2.3-2.5x faster** and is the only kind that allows truly asynchronous copies.
+* **Transfer granularity dominates.** 64 KiB copies reach < 1 GB/s: each one costs ~77 us, almost all of it
+  fixed per-copy overhead (PyTorch dispatch + launch on Windows/WDDM; Linux drivers are cheaper, but the
+  shape of the curve is the same). A 1.75 MiB all-layers block already gets 98% of peak. Extrapolating the
+  64 KiB row, a per-layer layout (28 x 2 copies of 32 KiB each) would be roughly 15x slower or worse. The vLLM
+  team saw the same effect on H100: moving from 32 KB per-layer fragments to 2 MB contiguous blocks raised
+  offload throughput by about an order of magnitude.
+* **Pinned memory is 2.2-3.1x faster** for block-sized and larger copies, and it is the only kind that allows truly asynchronous copies.
 * **The laptop link is ~14 GB/s**, between a quarter and a half of what datacenter PCIe 5.0 x16 hosts quote.
 * **SSD writes through a memory map are deceptive**: writes land in the page cache and only cost
   when flushed (0.31 GB/s with `FlushViewOfFile`); reads served from the page cache look like RAM.
@@ -193,7 +197,10 @@ hashed or shared by design; 270 tokens over 24 turns averages about 11 tokens pe
 * **Overlap moves the copy cost off the critical path.** Synchronous restore stalls each turn for
   44.7 ms on average (SSD reads plus H2D copies issued while the session waits). Prefetching the next
   scheduled session on the side stream while the current one decodes cuts this to 5.6-7.6 ms, because
-  98.8-100% of the blocks are already on the GPU when the turn starts.
+  98.8-100% of the blocks are already on the GPU when the turn starts. Note that `tiered_sync` and
+  `tiered_async` differ in three things at once (blocking vs side-stream copies, lazy vs write-through
+  offload, no prefetch vs prefetch). Most of the restore gain comes from prefetch, which is only possible
+  because the copies are asynchronous; this run does not separate the three effects.
 * **Decode step latency barely depends on the tier configuration.** Write-through D2H copies of
   freshly filled blocks run on the copy engine during compute. The step-time differences between rows
   (318-354 ms p50) are inside the noise of this run (see the warning below).
@@ -202,9 +209,9 @@ hashed or shared by design; 270 tokens over 24 turns averages about 11 tokens pe
 
 > **Warning about absolute times.** These runs shared the GPU with other heavy jobs (the GPU reported
 > 99-100% utilisation from another process). `nvidia-smi` showed SM clocks between 922 and 2,160 MHz
-> (3,090 MHz max) during the runs, and 180 MHz during an earlier attempt that was killed by the time limit. With the GPU to
-> itself (late in an earlier, smaller 3-session run that was not kept), a decode step took about 49 ms p50. Treat the
-> decode-step column as relative, within this table only. Hit counts, recomputed tokens, bytes moved and
+> (3,090 MHz max) during the runs. A later re-run at the same settings found the GPU power-capped at 180 MHz
+> and was killed by the 15-minute limit before finishing one config, so no uncontended step time is reported.
+> Treat the decode-step column as relative, within this table only. Hit counts, recomputed tokens, bytes moved and
 > token agreement do not depend on contention. Each config ran once (or twice for `tiered_async`)
 > because of the 15-minute limit per GPU job on this shared machine. Raw data:
 > `results/decode_main.json`, `results/decode_sched.json`, plus per-turn CSVs.

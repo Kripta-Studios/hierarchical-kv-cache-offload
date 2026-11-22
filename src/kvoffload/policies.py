@@ -61,14 +61,18 @@ class SchedulerAwarePolicy(LRUPolicy):
     def __init__(self) -> None:
         super().__init__()
         self._next_use: dict[str, int] = {}
+        self._window = 0
 
     def set_schedule(self, upcoming: Sequence[str]) -> None:
         self._next_use = {}
+        # "Never" must lie past the whole window. The window can repeat a session
+        # (s1, s1, s2), so the number of distinct sessions is not a safe bound.
+        self._window = len(upcoming)
         for i, sid in enumerate(upcoming):
             self._next_use.setdefault(sid, i)
 
     def victim(self, evictable: Callable[[Block], bool]) -> Block | None:
-        never = len(self._next_use) + 1
+        never = self._window
         best, best_dist = None, -1
         # Scan in LRU order so ties (e.g. all "not in the window") go to the LRU block.
         for b in self._order.values():

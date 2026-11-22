@@ -93,6 +93,9 @@ def test_scheduler_aware_policy_keeps_soon_needed_blocks():
     ok = lambda b: True
     assert lru.victim(ok) is blocks[0]              # oldest, although needed next
     assert sched.victim(ok) is blocks[1]            # "b" is not needed in the window
+    # A repeated session in the window must not push a later one out to "never".
+    sched.set_schedule(["c", "c", "c", "a"])
+    assert sched.victim(ok) is blocks[1]
 
 
 def test_runtime_simulation_reuses_system_prompt_and_tiers():
