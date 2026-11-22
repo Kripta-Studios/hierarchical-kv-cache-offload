@@ -1,0 +1,108 @@
+{
+  "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+  "torch": "2.11.0+cu128",
+  "model": "Qwen/Qwen3-0.6B",
+  "block_size": 16,
+  "capacity_blocks": {
+    "GPU": 128,
+    "CPU": 128,
+    "SSD": 512
+  },
+  "block_MiB": 1.75,
+  "workload": {
+    "n_sessions": 6,
+    "n_turns": 4,
+    "system_tokens": 256,
+    "user_tokens": 128,
+    "tool_tokens": 192,
+    "decode_tokens": 32,
+    "order": "random",
+    "seed": 0,
+    "vocab": 150000
+  },
+  "clocks_start": "2160 MHz, 3090 MHz, 48.67 W, 86",
+  "token_agreement_vs_tiered_sync": {
+    "gpu_only": 0.9954,
+    "tiered_sync": 1.0,
+    "tiered_async": 1.0
+  },
+  "runs": [
+    {
+      "config": "gpu_only",
+      "wall_s": 259.94,
+      "ttft_ms_mean": 464.59,
+      "ttft_ms_p95": 730.0,
+      "restore_ms_mean": 0.87,
+      "step_ms_p50": 338.407,
+      "step_ms_p99": 398.524,
+      "host_stall_s": 0.0,
+      "recomputed_tokens": 3662,
+      "hit_GPU": 570,
+      "hit_CPU": 0,
+      "hit_SSD": 0,
+      "miss_blocks": 212,
+      "gpu_hit_rate": 0.729,
+      "any_tier_hit_rate": 0.729,
+      "prefetched": 0,
+      "dropped": 407,
+      "copies": {},
+      "MB_moved": 0.0,
+      "repeat": 0
+    },
+    {
+      "config": "tiered_sync",
+      "wall_s": 276.89,
+      "ttft_ms_mean": 449.71,
+      "ttft_ms_p95": 641.08,
+      "restore_ms_mean": 44.66,
+      "step_ms_p50": 354.366,
+      "step_ms_p99": 439.731,
+      "host_stall_s": 1.524,
+      "recomputed_tokens": 270,
+      "hit_GPU": 584,
+      "hit_CPU": 106,
+      "hit_SSD": 92,
+      "miss_blocks": 0,
+      "gpu_hit_rate": 0.747,
+      "any_tier_hit_rate": 1.0,
+      "prefetched": 0,
+      "dropped": 0,
+      "copies": {
+        "GPU->CPU": 393,
+        "CPU->GPU": 198,
+        "CPU->SSD": 236,
+        "SSD->CPU": 92
+      },
+      "MB_moved": 1686.4,
+      "repeat": 0
+    },
+    {
+      "config": "tiered_async",
+      "wall_s": 245.67,
+      "ttft_ms_mean": 383.75,
+      "ttft_ms_p95": 478.39,
+      "restore_ms_mean": 6.61,
+      "step_ms_p50": 317.739,
+      "step_ms_p99": 374.83,
+      "host_stall_s": 0.871,
+      "recomputed_tokens": 270,
+      "hit_GPU": 773,
+      "hit_CPU": 9,
+      "hit_SSD": 0,
+      "miss_blocks": 0,
+      "gpu_hit_rate": 0.988,
+      "any_tier_hit_rate": 1.0,
+      "prefetched": 189,
+      "dropped": 0,
+      "copies": {
+        "GPU->CPU": 502,
+        "CPU->SSD": 284,
+        "CPU->GPU": 198,
+        "SSD->CPU": 166
+      },
+      "MB_moved": 2110.3,
+      "repeat": 0
+    }
+  ],
+  "clocks_now": "922 MHz, 3090 MHz, 34.48 W, 87"
+}

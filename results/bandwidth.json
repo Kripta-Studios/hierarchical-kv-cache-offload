@@ -1,0 +1,73 @@
+{
+  "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+  "torch": "2.11.0+cu128",
+  "cuda": "12.8",
+  "os": "Windows-11-10.0.26200-SP0",
+  "block_bytes": 1835008,
+  "pcie": [
+    {
+      "size": "64 KiB",
+      "bytes": 65536,
+      "host_memory": "pinned",
+      "h2d_GBps": 0.85,
+      "d2h_GBps": 0.98,
+      "h2d_us": 77.3
+    },
+    {
+      "size": "64 KiB",
+      "bytes": 65536,
+      "host_memory": "pageable",
+      "h2d_GBps": 0.84,
+      "d2h_GBps": 0.68,
+      "h2d_us": 77.7
+    },
+    {
+      "size": "1 KV block (1.75 MiB)",
+      "bytes": 1835008,
+      "host_memory": "pinned",
+      "h2d_GBps": 13.98,
+      "d2h_GBps": 13.88,
+      "h2d_us": 131.3
+    },
+    {
+      "size": "1 KV block (1.75 MiB)",
+      "bytes": 1835008,
+      "host_memory": "pageable",
+      "h2d_GBps": 5.51,
+      "d2h_GBps": 4.54,
+      "h2d_us": 333.1
+    },
+    {
+      "size": "64 MiB",
+      "bytes": 67108864,
+      "host_memory": "pinned",
+      "h2d_GBps": 14.32,
+      "d2h_GBps": 14.16,
+      "h2d_us": 4686.9
+    },
+    {
+      "size": "64 MiB",
+      "bytes": 67108864,
+      "host_memory": "pageable",
+      "h2d_GBps": 6.55,
+      "d2h_GBps": 5.99,
+      "h2d_us": 10249.1
+    }
+  ],
+  "overlap_ms": {
+    "compute_only": 203.46,
+    "copy_only": 37.37,
+    "both": 190.15,
+    "hidden_fraction_of_shorter": 1.36
+  },
+  "ssd_memmap": {
+    "bytes": 1073479680,
+    "write_flush_GBps": 0.31,
+    "read_GBps_page_cache_warm": 5.34
+  },
+  "ssd_direct_io": {
+    "write_GBps": 1.47,
+    "read_GBps": 1.98,
+    "block_read_us": 926.8
+  }
+}
