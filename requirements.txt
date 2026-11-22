@@ -1,6 +1,6 @@
 # Tested with the versions below (Python 3.12, Windows 11, CUDA 12.8 wheels)
 torch==2.11.0
-transformers
+transformers>=5.0
 numpy
 matplotlib
 pytest
