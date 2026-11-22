@@ -1,0 +1,6 @@
+# Tested with the versions below (Python 3.12, Windows 11, CUDA 12.8 wheels)
+torch==2.11.0
+transformers
+numpy
+matplotlib
+pytest

@@ -1,0 +1,10 @@
+[project]
+name = "kvoffload"
+version = "0.1.0"
+description = "Hierarchical (GPU -> pinned CPU -> NVMe) paged KV-cache block manager with async offload/prefetch"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: loads a real model (set RUN_SLOW=1)"]
